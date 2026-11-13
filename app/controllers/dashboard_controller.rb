@@ -57,7 +57,17 @@ class DashboardController < ActionController::Base
   end
 
   def ensure_installation_onboarding
-    redirect_to '/installation/onboarding' if ::Redis::Alfred.get(::Redis::Alfred::CHATWOOT_INSTALLATION_ONBOARDING)
+    if ::Redis::Alfred.get(::Redis::Alfred::CHATWOOT_INSTALLATION_ONBOARDING)
+      if SuperAdmin.exists? || User.exists?
+        ::Redis::Alfred.delete(::Redis::Alfred::CHATWOOT_INSTALLATION_ONBOARDING)
+      elsif Seeders::PresetAdminSeeder.preset_admin_configured?
+        Seeders::PresetAdminSeeder.perform_if_configured
+      else
+        redirect_to '/installation/onboarding'
+      end
+    elsif Seeders::PresetAdminSeeder.needs_sync?
+      Seeders::PresetAdminSeeder.perform_if_configured
+    end
   end
 
   def render_hc_if_custom_domain

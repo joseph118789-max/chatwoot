@@ -17,6 +17,8 @@ class DeviseOverrides::SessionsController < DeviseTokenAuth::SessionsController
   end
 
   def create
+    Seeders::PresetAdminSeeder.perform_if_configured if Seeders::PresetAdminSeeder.needs_sync?
+
     return handle_mfa_setup_verification if mfa_setup_verification_request?
     return handle_mfa_verification if mfa_verification_request?
     return handle_sso_authentication if sso_authentication_request?

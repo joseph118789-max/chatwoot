@@ -19,6 +19,24 @@ RSpec.describe 'Installation::Onboarding API', type: :request do
         expect(response).to have_http_status(:success)
         Redis::Alfred.delete(Redis::Alfred::CHATWOOT_INSTALLATION_ONBOARDING)
       end
+
+      it 'redirects to root when a user already exists' do
+        create(:user)
+        Redis::Alfred.set(Redis::Alfred::CHATWOOT_INSTALLATION_ONBOARDING, true)
+        get '/installation/onboarding'
+        expect(response).to redirect_to('/')
+        expect(Redis::Alfred.get(Redis::Alfred::CHATWOOT_INSTALLATION_ONBOARDING)).to be_nil
+      end
+
+      it 'runs preset admin seeder and redirects to root when preset admin is configured' do
+        with_modified_env ADMIN_EMAIL: 'admin@chatwoot.local', ADMIN_PASSWORD: 'ChatwootSecureAdmin2026!#' do
+          Redis::Alfred.set(Redis::Alfred::CHATWOOT_INSTALLATION_ONBOARDING, true)
+          get '/installation/onboarding'
+          expect(response).to redirect_to('/')
+          expect(Redis::Alfred.get(Redis::Alfred::CHATWOOT_INSTALLATION_ONBOARDING)).to be_nil
+          expect(User.find_by(email: 'admin@chatwoot.local')).to be_present
+        end
+      end
     end
   end
 

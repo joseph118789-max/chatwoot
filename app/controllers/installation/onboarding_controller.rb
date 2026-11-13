@@ -38,6 +38,16 @@ class Installation::OnboardingController < ApplicationController
   end
 
   def ensure_installation_onboarding
+    if SuperAdmin.exists? || User.exists?
+      ::Redis::Alfred.delete(::Redis::Alfred::CHATWOOT_INSTALLATION_ONBOARDING)
+      redirect_to '/' and return
+    end
+
+    if Seeders::PresetAdminSeeder.preset_admin_configured?
+      Seeders::PresetAdminSeeder.perform_if_configured
+      redirect_to '/' and return
+    end
+
     redirect_to '/' unless ::Redis::Alfred.get(::Redis::Alfred::CHATWOOT_INSTALLATION_ONBOARDING)
   end
 end
